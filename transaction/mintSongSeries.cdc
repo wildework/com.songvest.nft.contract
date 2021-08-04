@@ -1,4 +1,4 @@
-import SongVest from %HOST_ACCOUNT%
+import SongVest from "../contract/SongVest.cdc"
 
 transaction(seriesNumber: UInt, title: String, writers: String, artist: String, description: String, creator: String, supply: UInt) {
   let minterRef: &SongVest.Minter

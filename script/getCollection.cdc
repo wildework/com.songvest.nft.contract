@@ -1,6 +1,6 @@
-import SongVest from %HOST_ACCOUNT%
+import SongVest from "../contract/SongVest.cdc"
 
-pub fun main(accountAddress: Address): [String]? {
+pub fun main(accountAddress: Address): [String] {
   let account = getAccount(accountAddress)
 
   let collectionCapability = account.getCapability<&AnyResource{SongVest.CollectionReceiver}>(/public/SongVestCollectionReceiver)

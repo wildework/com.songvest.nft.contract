@@ -1,5 +1,3 @@
-import SongVest from %HOST_ACCOUNT%
-
 transaction(publicKey: String) {
   prepare(signer: AuthAccount) {
     let account = AuthAccount(payer: signer);

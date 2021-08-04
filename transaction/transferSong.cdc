@@ -1,4 +1,4 @@
-import SongVest from %HOST_ACCOUNT%
+import SongVest from "../contract/SongVest.cdc"
 
 transaction(seriesNumber: UInt, serialNumber: UInt, recipientAddress: Address) {
     let song: @SongVest.Song
