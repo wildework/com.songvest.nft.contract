@@ -1,0 +1,62 @@
+{
+  "emulators": {
+    "default": {
+      "port": 3569,
+      "serviceAccount": "emulator-account"
+    }
+  },
+  "contracts": {
+    "SongVest": "./contract/SongVest.cdc"
+  },
+  "networks": {
+    "emulator": "127.0.0.1:3569",
+    "mainnet": "access.mainnet.nodes.onflow.org:9000",
+    "testnet": "access.devnet.nodes.onflow.org:9000"
+  },
+  "accounts": {
+    "emulator-account": {
+      "address": "f8d6e0586b0a20c7",
+      "key": "7475123afa3f6fa150f1914456eee2346e68abba41188da105163f7362936a5e"
+    },
+    "0xSongVestContract": {
+      "address": "01cf0e2f2f715450",
+      "key": {
+        "type": "hex",
+        "index": 0,
+        "signatureAlgorithm": "ECDSA_secp256k1",
+        "hashAlgorithm": "SHA3_256",
+        "privateKey": "4bd1ad756f0150e15778fc3ac13cad583739d513a1d1a32d6b36b537867513a1"
+      },
+      "name": "0xSongVestContract"
+    },
+    "0xSongVestUser": {
+      "address": "179b6b1cb6755e31",
+      "key": {
+        "type": "hex",
+        "index": 0,
+        "signatureAlgorithm": "ECDSA_secp256k1",
+        "hashAlgorithm": "SHA3_256",
+        "privateKey": "624b39e3dc111d5f7c210d11b9eb13a70515bee0f14f34e71515654ff0076375"
+      },
+      "name": "0xSongVestUser"
+    },
+    "0xSongVestRandom": {
+      "address": "f3fcd2c1a78f5eee",
+      "key": {
+        "type": "hex",
+        "index": 0,
+        "signatureAlgorithm": "ECDSA_secp256k1",
+        "hashAlgorithm": "SHA3_256",
+        "privateKey": "1bb0205a55175fb0b52a5902deb4e46a822f8a5213c1fa898c0561b3b1b2d36e"
+      },
+      "name": "0xSongVestRandom"
+    }
+  },
+  "deployments": {
+    "emulator": {
+      "0xSongVestContract": [
+        "SongVest"
+      ]
+    }
+  }
+}
