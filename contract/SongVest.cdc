@@ -6,7 +6,7 @@ pub contract SongVest: NonFungibleToken {
 
   pub let CollectionStoragePath: StoragePath
   pub let CollectionPublicPath: PublicPath
-  pub let MinterPath: StoragePath
+  pub let MinterStoragePath: StoragePath
 
   pub event ContractInitialized()
   pub event Withdraw(id: UInt64, from: Address?)
@@ -52,12 +52,11 @@ pub contract SongVest: NonFungibleToken {
     }
   }
 
-  // pub resource interface CollectionReceiver {
-  //   pub fun add(song: @Song, receiverAddress: Address?)
-  //   pub fun listSongs(): [String]
-  // }
+  pub resource interface SongCollection {
+    pub fun borrowSong(id: UInt64): &SongVest.NFT
+  }
 
-  pub resource Collection: NonFungibleToken.Provider, NonFungibleToken.Receiver, NonFungibleToken.CollectionPublic {
+  pub resource Collection: NonFungibleToken.Provider, NonFungibleToken.Receiver, NonFungibleToken.CollectionPublic, SongCollection {
     pub var ownedNFTs: @{UInt64: NonFungibleToken.NFT}
     init() {
       self.ownedNFTs <- {}
@@ -92,6 +91,10 @@ pub contract SongVest: NonFungibleToken {
     }
     pub fun borrowNFT(id: UInt64): &NonFungibleToken.NFT {
       return &self.ownedNFTs[id] as &NonFungibleToken.NFT
+    }
+    pub fun borrowSong(id: UInt64): &SongVest.NFT {
+      let ref = &self.ownedNFTs[id] as auth &NonFungibleToken.NFT
+      return ref as! &SongVest.NFT
     }
   }
 
