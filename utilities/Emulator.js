@@ -144,10 +144,12 @@ class Emulator {
     this.storeConfiguration();
   }
   async stop() {
-    this.subprocess.kill();
-    do {
-      await new Promise((resolve) => setTimeout(resolve, 50));
-    } while (this.isRunning)
+    if (this.subprocess) {
+      this.subprocess.kill();
+      do {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      } while (this.isRunning)
+    }
   }
 }
 

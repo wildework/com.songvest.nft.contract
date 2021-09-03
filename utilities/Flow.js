@@ -42,8 +42,8 @@ async function executeScript({path, args} = {path: '', args: []}) {
   const result = await exec(
     [
       `flow scripts execute ${path}`,
-      `--output json`,
-      ...args
+      ...args,
+      `--output json`
     ].join(' ')
   );
   return JSON.parse(result.stdout);
@@ -52,8 +52,8 @@ async function transactionSend({path, args} = {path: '', args: []}) {
   const result = await exec(
     [
       `flow transactions send ${path}`,
-      `--output json`,
-      ...args
+      ...args,
+      `--output json`
     ].join(' ')
   );
   return JSON.parse(result.stdout);

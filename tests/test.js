@@ -7,7 +7,8 @@ describe('SongVest contract functions.', () => {
 
   beforeAll(async () => {
     emulator = new Emulator({isSilent: true});
-    await emulator.start();
+    await emulator.loadConfiguration();
+    // await emulator.start();
     await emulator.initializeAccounts();
     await Flow.projectDeploy();
 
@@ -27,8 +28,8 @@ describe('SongVest contract functions.', () => {
     const result = await Flow.executeScript({
       path: './tests/wasCollectionConfigured.cdc',
       args: [
-        `--arg Address:${accounts['0xSongVestUser'].address}`,
-        `--arg Address:${accounts['0xSongVestRandom'].address}`
+        `${accounts['0xSongVestUser'].address}`,
+        `${accounts['0xSongVestRandom'].address}`
       ]
     });
 
@@ -49,21 +50,21 @@ describe('SongVest contract functions.', () => {
     await Flow.transactionSend({
       path: './transaction/mintSongSeries.cdc',
       args: [
+        '0',
+        '"Song Title"',
+        '"Writers"',
+        '"Artist"',
+        '"Description"',
+        '"Creator"',
+        '3',
         '--signer 0xSongVestContract',
-        '--arg UInt:0',
-        '--arg String:"Song Title"',
-        '--arg String:"Writers"',
-        '--arg String:"Artist"',
-        '--arg String:"Description"',
-        '--arg String:"Creator"',
-        '--arg UInt:3',
       ]
     });
 
     const result = await Flow.executeScript({
       path: './script/getCollection.cdc',
       args: [
-        `--arg Address:${accounts['0xSongVestContract'].address}`,
+        `${accounts['0xSongVestContract'].address}`,
       ]
     });
 
@@ -82,21 +83,21 @@ describe('SongVest contract functions.', () => {
     await Flow.transactionSend({
       path: './transaction/mintSongSeries.cdc',
       args: [
+        '1',
+        '"Song Title"',
+        '"Writers"',
+        '"Artist"',
+        '"Description"',
+        '"Creator"',
+        '3',
         '--signer 0xSongVestContract',
-        '--arg UInt:1',
-        '--arg String:"Song Title"',
-        '--arg String:"Writers"',
-        '--arg String:"Artist"',
-        '--arg String:"Description"',
-        '--arg String:"Creator"',
-        '--arg UInt:3',
       ]
     });
 
     const result = await Flow.executeScript({
       path: './script/getCollection.cdc',
       args: [
-        `--arg Address:${accounts['0xSongVestContract'].address}`,
+        `${accounts['0xSongVestContract'].address}`,
       ]
     });
 
