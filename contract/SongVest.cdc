@@ -1,10 +1,25 @@
-pub contract SongVest {
+import NonFungibleToken from "./NonFungibleToken.cdc"
+
+pub contract SongVest: NonFungibleToken {
+
+  pub var totalSupply: UInt64
+
+  pub let CollectionStoragePath: StoragePath
+  pub let CollectionPublicPath: PublicPath
+  pub let MinterPath: StoragePath
+
+  pub event ContractInitialized()
+  pub event Withdraw(id: UInt64, from: Address?)
+  pub event Deposit(id: UInt64, to: Address?)
 
   pub event SongMintEvent(series: UInt, serialNumber: UInt)
   pub event SongAddEvent(series: UInt, serialNumber: UInt, receiverAddress: Address)
   pub event SongRemoveEvent(series: UInt, serialNumber: UInt, senderAddress: Address)
 
-  pub resource Song {
+  // The SongVest Song NFT.
+  pub resource NFT: NonFungibleToken.INFT {
+    pub let id: UInt64
+
     pub let series: UInt
     pub let title: String
     pub let writers: String
@@ -14,7 +29,18 @@ pub contract SongVest {
     pub let supply: UInt
     pub let serialNumber: UInt
 
-    init(series: UInt, title: String, writers: String, artist: String, description: String, creator: String, supply: UInt, serialNumber: UInt) {
+    init(
+      series: UInt,
+      title: String,
+      writers: String,
+      artist: String,
+      description: String,
+      creator: String,
+      supply: UInt,
+      serialNumber: UInt
+    ) {
+      self.id = 1_000_000_000 * UInt64(series) + UInt64(serialNumber)
+
       self.series = series
       self.title = title
       self.writers = writers
@@ -26,57 +52,53 @@ pub contract SongVest {
     }
   }
 
-  pub resource interface CollectionReceiver {
-    pub fun add(song: @Song, receiverAddress: Address?)
-    pub fun listSongs(): [String]
-  }
+  // pub resource interface CollectionReceiver {
+  //   pub fun add(song: @Song, receiverAddress: Address?)
+  //   pub fun listSongs(): [String]
+  // }
 
-  pub resource Collection: CollectionReceiver {
-    pub var songs: @[Song]
+  pub resource Collection: NonFungibleToken.Provider, NonFungibleToken.Receiver, NonFungibleToken.CollectionPublic {
+    pub var ownedNFTs: @{UInt64: NonFungibleToken.NFT}
     init() {
-      self.songs <- []
+      self.ownedNFTs <- {}
     }
     destroy() {
-      var cursor = 0
-      while cursor < self.songs.length {
-        destroy self.songs.remove(at: cursor)
-        cursor = cursor + 1
-      }
-      destroy self.songs
+      destroy self.ownedNFTs
     }
-    pub fun add(song: @Song, receiverAddress: Address?) {
-      if receiverAddress != nil {
-        emit SongAddEvent(series: song.series, serialNumber: song.serialNumber, receiverAddress: receiverAddress!)
+
+    pub fun withdraw(withdrawID: UInt64): @NonFungibleToken.NFT {
+      post {
+          result.id == withdrawID: "The ID of the withdrawn Song must be the same as the requested ID."
       }
-      
-      self.songs.append(<- song)
+      let token <- self.ownedNFTs.remove(key: withdrawID) ?? panic("Song not found in collection.")
+
+      emit Withdraw(id: token.id, from: self.owner?.address)
+
+      return <- token
     }
-    pub fun remove(series: UInt, serialNumber: UInt, senderAddress: Address): @Song {
-      var cursor = 0
-      while cursor < self.songs.length {
-        if (self.songs[cursor].series == series && self.songs[cursor].serialNumber == serialNumber) {
-          emit SongRemoveEvent(series: self.songs[cursor].series, serialNumber: self.songs[cursor].serialNumber, senderAddress: senderAddress)
-          return <- self.songs.remove(at: cursor)
-        }
-        cursor = cursor + 1
-      }
+    
+    pub fun deposit(token: @NonFungibleToken.NFT) {
+      let token <- token as! @SongVest.NFT
+      let id = token.id
+      let existingToken <- self.ownedNFTs[id] <- token
 
-      return panic("Song with series and serial number wasn't found.")
+      emit Deposit(id: id, to: self.owner?.address)
+
+      destroy existingToken
     }
-    pub fun listSongs(): [String] {
-      let list: [String] = []
 
-      var cursor = 0
-      while cursor < self.songs.length {
-        list.append("series ".concat(self.songs[cursor].series.toString()).concat(" #").concat(self.songs[cursor].serialNumber.toString()).concat(" – ").concat(self.songs[cursor].title))
-        cursor = cursor + 1
-      }
-
-      return list
+    pub fun getIDs(): [UInt64] {
+      return self.ownedNFTs.keys
+    }
+    pub fun borrowNFT(id: UInt64): &NonFungibleToken.NFT {
+      return &self.ownedNFTs[id] as &NonFungibleToken.NFT
     }
   }
 
-  pub fun createCollection(): @Collection {
+  pub fun createEmptyCollection(): @Collection {
+    post {
+      result.getIDs().length == 0: "The created collection must be empty!"
+    }
     return <- create Collection()
   }
 
@@ -85,7 +107,15 @@ pub contract SongVest {
     init() {
       self.seriesNumber = 0
     }
-    pub fun mintSong(seriesNumber: UInt, title: String, writers: String, artist: String, description: String, creator: String, supply: UInt): @Collection {
+    pub fun mintSong(
+      seriesNumber: UInt,
+      title: String,
+      writers: String,
+      artist: String,
+      description: String,
+      creator: String,
+      supply: UInt
+    ): @Collection {
       var collection <- create Collection()
 
       if self.seriesNumber >= seriesNumber {
@@ -97,20 +127,19 @@ pub contract SongVest {
         var serialNumber: UInt = 0
         while serialNumber < supply {
           emit SongMintEvent(series: self.seriesNumber, serialNumber: serialNumber)
-          collection.add(
-            song: <- create Song(
-              series: self.seriesNumber,
-              title: title,
-              writers: writers,
-              artist: artist,
-              description: description,
-              creator: creator,
-              supply: supply,
-              serialNumber: serialNumber
-            ),
-            receiverAddress: nil
+          let song <- create NFT(
+            series: self.seriesNumber,
+            title: title,
+            writers: writers,
+            artist: artist,
+            description: description,
+            creator: creator,
+            supply: supply,
+            serialNumber: serialNumber
           )
+          collection.deposit(token: <- song)
           serialNumber = serialNumber + 1 as UInt
+          SongVest.totalSupply = SongVest.totalSupply + 1 as UInt64
         }
       }
 
@@ -119,6 +148,16 @@ pub contract SongVest {
   }
 
   init() {
-    self.account.save(<- create Minter(), to: /storage/SongVestMinter)
+    // Initialize the total supply.
+    self.totalSupply = 0
+
+    // Paths
+    self.CollectionStoragePath = /storage/SongVestCollection
+    self.CollectionPublicPath = /public/SongVestCollection
+    self.MinterStoragePath = /storage/SongVestMinter
+
+    self.account.save(<- create Minter(), to: self.MinterStoragePath)
+
+    emit ContractInitialized()
   }
 }
