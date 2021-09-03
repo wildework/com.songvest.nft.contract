@@ -1,11 +1,20 @@
 import SongVest from "../contract/SongVest.cdc"
+import NonFungibleToken from "../contract/NonFungibleToken.cdc"
 
-transaction(seriesNumber: UInt, title: String, writers: String, artist: String, description: String, creator: String, supply: UInt) {
+transaction(
+  seriesNumber: UInt,
+  title: String,
+  writers: String,
+  artist: String,
+  description: String,
+  creator: String,
+  supply: UInt
+) {
   let minterRef: &SongVest.Minter
-  let collectionRef: &SongVest.Collection
+  let collectionRef: &AnyResource{NonFungibleToken.Receiver}
   prepare(account: AuthAccount) {
-    self.minterRef = account.borrow<&SongVest.Minter>(from: /storage/SongVestMinter) ?? panic("Couldn't borrow SongVest.Minter")
-    self.collectionRef = account.borrow<&SongVest.Collection>(from: /storage/SongVestCollection) ?? panic("Couldn't borrow SongVest.Collection")
+    self.minterRef = account.borrow<&SongVest.Minter>(from: SongVest.MinterStoragePath) ?? panic("Couldn't borrow SongVest.Minter")
+    self.collectionRef = account.getCapability<&AnyResource{NonFungibleToken.Receiver}>(SongVest.CollectionPublicPath).borrow() ?? panic("Couldn't borrow NonFungibleToken.Receiver")
   }
   execute {
     let collection <- self.minterRef.mintSong(
@@ -19,10 +28,12 @@ transaction(seriesNumber: UInt, title: String, writers: String, artist: String, 
     )
 
     // Transfer all songs to the collection.
+    let ids = collection.getIDs()
     var cursor = 0
-    while cursor < collection.songs.length {
-      let song <- collection.songs.removeFirst()
-      self.collectionRef.add(song: <- song, receiverAddress: nil)
+    while cursor < ids.length {
+      let song <- collection.withdraw(withdrawID: ids[cursor])
+      self.collectionRef.deposit(token: <- song)
+      cursor = cursor + 1
     }
 
     // Destroy empty collection.

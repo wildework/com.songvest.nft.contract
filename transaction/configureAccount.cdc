@@ -1,24 +1,24 @@
 import SongVest from "../contract/SongVest.cdc"
+import NonFungibleToken from "../contract/NonFungibleToken.cdc"
 
 transaction {
   let accountAddress: Address
   
   prepare(account: AuthAccount) {
-    let collection <- SongVest.createCollection()
-    if collection.songs.length != 0 {
-      panic("Collection size incorrect, needs to be empty.")
+    if account.borrow<&SongVest.Collection>(from: SongVest.CollectionStoragePath) == nil {
+      let collection <- SongVest.createEmptyCollection()
+      account.save(<- collection, to: SongVest.CollectionStoragePath)
+      account.link<&SongVest.Collection{NonFungibleToken.Receiver, NonFungibleToken.CollectionPublic, SongVest.SongCollection}>(
+        SongVest.CollectionPublicPath,
+        target: SongVest.CollectionStoragePath
+      )
     }
-    account.save(<- collection, to: /storage/SongVestCollection)
-    account.link<&AnyResource{SongVest.CollectionReceiver}>(
-      /public/SongVestCollectionReceiver,
-      target: /storage/SongVestCollection
-    )
 
     self.accountAddress = account.address;
   }
   post {
     getAccount(self.accountAddress)
-      .getCapability<&AnyResource{SongVest.CollectionReceiver}>(/public/SongVestCollectionReceiver)
-      .check() : "Collection receiver reference was not created correctly."
+      .getCapability<&AnyResource{NonFungibleToken.Receiver, NonFungibleToken.CollectionPublic, SongVest.SongCollection}>(SongVest.CollectionPublicPath)
+      .check() : "Collection reference was not created correctly."
   }
 }
