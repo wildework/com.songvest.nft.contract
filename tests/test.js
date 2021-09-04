@@ -8,7 +8,7 @@ describe('SongVest contract functions.', () => {
   beforeAll(async () => {
     emulator = new Emulator({isSilent: true});
     await emulator.loadConfiguration();
-    // await emulator.start();
+    await emulator.start();
     await emulator.initializeAccounts();
     await Flow.projectDeploy();
 
