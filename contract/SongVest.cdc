@@ -1,3 +1,6 @@
+// Author: Morgan Wilde
+// Author's website: flowdeveloper.com
+
 import NonFungibleToken from "./NonFungibleToken.cdc"
 
 pub contract SongVest: NonFungibleToken {
@@ -12,9 +15,7 @@ pub contract SongVest: NonFungibleToken {
   pub event Withdraw(id: UInt64, from: Address?)
   pub event Deposit(id: UInt64, to: Address?)
 
-  pub event SongMintEvent(series: UInt, serialNumber: UInt)
-  pub event SongAddEvent(series: UInt, serialNumber: UInt, receiverAddress: Address)
-  pub event SongRemoveEvent(series: UInt, serialNumber: UInt, senderAddress: Address)
+  pub event SongMint(id: UInt64, series: UInt, serialNumber: UInt)
 
   // The SongVest Song NFT.
   pub resource NFT: NonFungibleToken.INFT {
@@ -30,6 +31,7 @@ pub contract SongVest: NonFungibleToken {
     pub let serialNumber: UInt
 
     init(
+      id: UInt64,
       series: UInt,
       title: String,
       writers: String,
@@ -39,7 +41,7 @@ pub contract SongVest: NonFungibleToken {
       supply: UInt,
       serialNumber: UInt
     ) {
-      self.id = 1_000_000_000 * UInt64(series) + UInt64(serialNumber)
+      self.id = id
 
       self.series = series
       self.title = title
@@ -129,8 +131,9 @@ pub contract SongVest: NonFungibleToken {
         self.seriesNumber = seriesNumber
         var serialNumber: UInt = 0
         while serialNumber < supply {
-          emit SongMintEvent(series: self.seriesNumber, serialNumber: serialNumber)
+          emit SongMint(id: SongVest.totalSupply, series: self.seriesNumber, serialNumber: serialNumber)
           let song <- create NFT(
+            id: SongVest.totalSupply,
             series: self.seriesNumber,
             title: title,
             writers: writers,
