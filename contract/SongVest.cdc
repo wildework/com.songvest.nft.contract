@@ -31,7 +31,6 @@ pub contract SongVest: NonFungibleToken {
     pub let serialNumber: UInt
 
     init(
-      id: UInt64,
       series: UInt,
       title: String,
       writers: String,
@@ -41,7 +40,11 @@ pub contract SongVest: NonFungibleToken {
       supply: UInt,
       serialNumber: UInt
     ) {
-      self.id = id
+      pre {
+        series > 0: "Series must be greater than zero"
+        serialNumber < 1_000_000_000: "Serial number must be less than 1000,000,000"
+      }
+      self.id = 1_000_000_000 * UInt64(series) + UInt64(serialNumber)
 
       self.series = series
       self.title = title
@@ -131,9 +134,7 @@ pub contract SongVest: NonFungibleToken {
         self.seriesNumber = seriesNumber
         var serialNumber: UInt = 0
         while serialNumber < supply {
-          emit SongMint(id: SongVest.totalSupply, series: self.seriesNumber, serialNumber: serialNumber)
           let song <- create NFT(
-            id: SongVest.totalSupply,
             series: self.seriesNumber,
             title: title,
             writers: writers,
@@ -143,6 +144,9 @@ pub contract SongVest: NonFungibleToken {
             supply: supply,
             serialNumber: serialNumber
           )
+
+          emit SongMint(id: song.id, series: self.seriesNumber, serialNumber: serialNumber)
+
           collection.deposit(token: <- song)
           serialNumber = serialNumber + 1 as UInt
           SongVest.totalSupply = SongVest.totalSupply + 1 as UInt64
